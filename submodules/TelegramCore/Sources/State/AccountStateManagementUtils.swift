@@ -4155,6 +4155,17 @@ func replayFinalState(
                                                 }
                                             })
                                         }
+                                    case .peerJoined:
+                                        // Check if showContactsJoinedChats setting is disabled
+                                        if let globalNotificationSettings = transaction.getPreferencesEntry(key: PreferencesKeys.globalNotifications)?.get(GlobalNotificationSettings.self) {
+                                            if !globalNotificationSettings.effective.showContactsJoinedChats {
+                                                // If the setting is disabled, exclude this chat from the chat list
+                                                // Only if this is the only message in the chat (first contact signup message)
+                                                if let topMessage = transaction.getTopPeerMessage(peerId: message.id.peerId), topMessage.id == message.id {
+                                                    transaction.updatePeerChatListInclusion(message.id.peerId, inclusion: .notIncluded)
+                                                }
+                                            }
+                                        }
                                     default:
                                         break
                                     }

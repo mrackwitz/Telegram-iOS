@@ -74,6 +74,7 @@ private final class NotificationsAndSoundsArguments {
     let updateTotalUnreadCountCategory: (Bool) -> Void
     
     let updateJoinedNotifications: (Bool) -> Void
+    let updateShowJoinedChats: (Bool) -> Void
     
     let resetNotifications: () -> Void
         
@@ -81,7 +82,7 @@ private final class NotificationsAndSoundsArguments {
     
     let updateNotificationsFromAllAccounts: (Bool) -> Void
     
-    init(context: AccountContext, presentController: @escaping (ViewController, ViewControllerPresentationArguments?) -> Void, pushController: @escaping(ViewController)->Void, soundSelectionDisposable: MetaDisposable, authorizeNotifications: @escaping () -> Void, suppressWarning: @escaping () -> Void, openPeerCategory: @escaping (NotificationsPeerCategory) -> Void, openReactions: @escaping () -> Void, updateInAppSounds: @escaping (Bool) -> Void, updateInAppVibration: @escaping (Bool) -> Void, updateInAppPreviews: @escaping (Bool) -> Void, updateDisplayNameOnLockscreen: @escaping (Bool) -> Void, updateIncludeTag: @escaping (CounterTagSettings, Bool) -> Void, updateTotalUnreadCountCategory: @escaping (Bool) -> Void, resetNotifications: @escaping () -> Void, openAppSettings: @escaping () -> Void, updateJoinedNotifications: @escaping (Bool) -> Void, updateNotificationsFromAllAccounts: @escaping (Bool) -> Void) {
+    init(context: AccountContext, presentController: @escaping (ViewController, ViewControllerPresentationArguments?) -> Void, pushController: @escaping(ViewController)->Void, soundSelectionDisposable: MetaDisposable, authorizeNotifications: @escaping () -> Void, suppressWarning: @escaping () -> Void, openPeerCategory: @escaping (NotificationsPeerCategory) -> Void, openReactions: @escaping () -> Void, updateInAppSounds: @escaping (Bool) -> Void, updateInAppVibration: @escaping (Bool) -> Void, updateInAppPreviews: @escaping (Bool) -> Void, updateDisplayNameOnLockscreen: @escaping (Bool) -> Void, updateIncludeTag: @escaping (CounterTagSettings, Bool) -> Void, updateTotalUnreadCountCategory: @escaping (Bool) -> Void, resetNotifications: @escaping () -> Void, openAppSettings: @escaping () -> Void, updateJoinedNotifications: @escaping (Bool) -> Void, updateShowJoinedChats: @escaping (Bool) -> Void, updateNotificationsFromAllAccounts: @escaping (Bool) -> Void) {
         self.context = context
         self.presentController = presentController
         self.pushController = pushController
@@ -99,6 +100,7 @@ private final class NotificationsAndSoundsArguments {
         self.resetNotifications = resetNotifications
         self.openAppSettings = openAppSettings
         self.updateJoinedNotifications = updateJoinedNotifications
+        self.updateShowJoinedChats = updateShowJoinedChats
         self.updateNotificationsFromAllAccounts = updateNotificationsFromAllAccounts
     }
 }
@@ -123,6 +125,7 @@ public enum NotificationsAndSoundsEntryTag: ItemListItemTag {
     case includeChannels
     case unreadCountCategory
     case joinedNotifications
+    case showJoinedChats
     case reset
     
     public func isEqual(to other: ItemListItemTag) -> Bool {
@@ -164,6 +167,8 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
     
     case joinedNotifications(PresentationTheme, String, Bool)
     case joinedNotificationsInfo(PresentationTheme, String)
+    case showJoinedChats(PresentationTheme, String, Bool)
+    case showJoinedChatsInfo(PresentationTheme, String)
     
     case reset(PresentationTheme, String)
     case resetNotice(PresentationTheme, String)
@@ -182,7 +187,7 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
                 return NotificationsAndSoundsSection.displayNamesOnLockscreen.rawValue
             case .badgeHeader, .includeChannels, .unreadCountCategory, .unreadCountCategoryInfo:
                 return NotificationsAndSoundsSection.badge.rawValue
-            case .joinedNotifications, .joinedNotificationsInfo:
+            case .joinedNotifications, .joinedNotificationsInfo, .showJoinedChats, .showJoinedChatsInfo:
                 return NotificationsAndSoundsSection.joinedNotifications.rawValue
             case .reset, .resetNotice:
                 return NotificationsAndSoundsSection.reset.rawValue
@@ -237,10 +242,14 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
                 return 24
             case .joinedNotificationsInfo:
                 return 25
-            case .reset:
+            case .showJoinedChats:
                 return 26
-            case .resetNotice:
+            case .showJoinedChatsInfo:
                 return 27
+            case .reset:
+                return 28
+            case .resetNotice:
+                return 29
         }
     }
     
@@ -262,6 +271,8 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
                 return NotificationsAndSoundsEntryTag.unreadCountCategory
             case .joinedNotifications:
                 return NotificationsAndSoundsEntryTag.joinedNotifications
+            case .showJoinedChats:
+                return NotificationsAndSoundsEntryTag.showJoinedChats
             case .reset:
                 return NotificationsAndSoundsEntryTag.reset
             default:
@@ -409,6 +420,18 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
                 } else {
                     return false
                 }
+            case let .showJoinedChats(lhsTheme, lhsText, lhsValue):
+                if case let .showJoinedChats(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
+                    return true
+                } else {
+                    return false
+                }
+            case let .showJoinedChatsInfo(lhsTheme, lhsText):
+                if case let .showJoinedChatsInfo(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                    return true
+                } else {
+                    return false
+                }
             case let .reset(lhsTheme, lhsText):
                 if case let .reset(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
                     return true
@@ -508,6 +531,12 @@ private enum NotificationsAndSoundsEntry: ItemListNodeEntry {
                     arguments.updateJoinedNotifications(updatedValue)
                 }, tag: self.tag)
             case let .joinedNotificationsInfo(_, text):
+                return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
+            case let .showJoinedChats(_, text, value):
+                return ItemListSwitchItem(presentationData: presentationData, systemStyle: .glass, title: text, value: value, sectionId: self.section, style: .blocks, updated: { updatedValue in
+                    arguments.updateShowJoinedChats(updatedValue)
+                }, tag: self.tag)
+            case let .showJoinedChatsInfo(_, text):
                 return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
             case let .reset(_, text):
                 return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: text, kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
@@ -620,6 +649,8 @@ private func notificationsAndSoundsEntries(authorizationStatus: AccessType, warn
     entries.append(.unreadCountCategoryInfo(presentationData.theme, inAppSettings.totalUnreadCountDisplayCategory == .chats ? presentationData.strings.Notifications_Badge_CountUnreadMessages_InfoOff : presentationData.strings.Notifications_Badge_CountUnreadMessages_InfoOn))
     entries.append(.joinedNotifications(presentationData.theme, presentationData.strings.NotificationSettings_ContactJoined, globalSettings.contactsJoined))
     entries.append(.joinedNotificationsInfo(presentationData.theme, presentationData.strings.NotificationSettings_ContactJoinedInfo))
+    entries.append(.showJoinedChats(presentationData.theme, "Show Chats When Contacts Join", globalSettings.showContactsJoinedChats))
+    entries.append(.showJoinedChatsInfo(presentationData.theme, "When disabled, chats will not automatically appear in your chat list when contacts sign up for Telegram"))
     
     entries.append(.reset(presentationData.theme, presentationData.strings.Notifications_ResetAllNotifications))
     entries.append(.resetNotice(presentationData.theme, presentationData.strings.Notifications_ResetAllNotificationsHelp))
@@ -768,6 +799,12 @@ public func notificationsAndSoundsController(context: AccountContext, exceptions
         let _ = updateGlobalNotificationSettingsInteractively(postbox: context.account.postbox, { settings in
             var settings = settings
             settings.contactsJoined = value
+            return settings
+        }).start()
+    }, updateShowJoinedChats: { value in
+        let _ = updateGlobalNotificationSettingsInteractively(postbox: context.account.postbox, { settings in
+            var settings = settings
+            settings.showContactsJoinedChats = value
             return settings
         }).start()
     }, updateNotificationsFromAllAccounts: { value in

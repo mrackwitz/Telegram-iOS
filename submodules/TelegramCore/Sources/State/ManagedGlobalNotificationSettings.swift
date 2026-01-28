@@ -309,7 +309,7 @@ private func fetchedNotificationSettings(network: Network) -> Signal<GlobalNotif
             )
         }
         
-        return .single(GlobalNotificationSettingsSet(privateChats: userSettings, groupChats: chatsSettings, channels: channelSettings, reactionSettings: reactionSettings, contactsJoined: contactsJoinedMuted == .boolFalse))
+        return .single(GlobalNotificationSettingsSet(privateChats: userSettings, groupChats: chatsSettings, channels: channelSettings, reactionSettings: reactionSettings, contactsJoined: contactsJoinedMuted == .boolFalse, showContactsJoinedChats: true))
     }
 }
 

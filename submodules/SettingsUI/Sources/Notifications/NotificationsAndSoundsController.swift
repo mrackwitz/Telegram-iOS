@@ -649,6 +649,7 @@ private func notificationsAndSoundsEntries(authorizationStatus: AccessType, warn
     entries.append(.unreadCountCategoryInfo(presentationData.theme, inAppSettings.totalUnreadCountDisplayCategory == .chats ? presentationData.strings.Notifications_Badge_CountUnreadMessages_InfoOff : presentationData.strings.Notifications_Badge_CountUnreadMessages_InfoOn))
     entries.append(.joinedNotifications(presentationData.theme, presentationData.strings.NotificationSettings_ContactJoined, globalSettings.contactsJoined))
     entries.append(.joinedNotificationsInfo(presentationData.theme, presentationData.strings.NotificationSettings_ContactJoinedInfo))
+    // TODO: Add localized strings NotificationSettings_ShowContactsJoinedChats and NotificationSettings_ShowContactsJoinedChatsInfo
     entries.append(.showJoinedChats(presentationData.theme, "Show Chats When Contacts Join", globalSettings.showContactsJoinedChats))
     entries.append(.showJoinedChatsInfo(presentationData.theme, "When disabled, chats will not automatically appear in your chat list when contacts sign up for Telegram"))
     
